@@ -16,6 +16,12 @@ PyMongo support for Flask applications
         return render_template('index.html',
             online_users=online_users)
 
+
+# Auth Mechanism
+
+added new config: `MONGO_AUTH_MECHANISM`
+
+
 ## More Info
 
 * [Flask-PyMongo Documentation](http://flask-pymongo.readthedocs.org/)

@@ -23,7 +23,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
 __all__ = ('PyMongo', 'ASCENDING', 'DESCENDING')
 
 from bson.errors import InvalidId
@@ -51,7 +50,6 @@ if PY2:
 else:
     text_type = str
     num_type = int
-
 
 DESCENDING = pymongo.DESCENDING
 """Descending sort order."""
@@ -131,18 +129,27 @@ class PyMongo(object):
             if not parsed.get('database'):
                 raise ValueError('MongoDB URI does not contain database name')
             app.config[key('DBNAME')] = parsed['database']
-            app.config[key('READ_PREFERENCE')] = parsed['options'].get('read_preference')
+            app.config[key('READ_PREFERENCE')] = parsed['options'].get(
+                'read_preference')
             app.config[key('USERNAME')] = parsed['username']
             app.config[key('PASSWORD')] = parsed['password']
-            app.config[key('REPLICA_SET')] = parsed['options'].get('replica_set')
-            app.config[key('MAX_POOL_SIZE')] = parsed['options'].get('max_pool_size')
-            app.config[key('SOCKET_TIMEOUT_MS')] = parsed['options'].get('socket_timeout_ms', None)
-            app.config[key('CONNECT_TIMEOUT_MS')] = parsed['options'].get('connect_timeout_ms', None)
+            app.config[key('REPLICA_SET')] = parsed['options'].get(
+                'replica_set')
+            app.config[key('MAX_POOL_SIZE')] = parsed['options'].get(
+                'max_pool_size')
+            app.config[key('SOCKET_TIMEOUT_MS')] = parsed['options'].get(
+                'socket_timeout_ms', None)
+            app.config[key('CONNECT_TIMEOUT_MS')] = parsed['options'].get(
+                'connect_timeout_ms', None)
+            app.config[key('AUTH_MECHANISM')] = parsed['options'].get(
+                'authmechanism', 'DEFAULT')
 
             if pymongo.version_tuple[0] < 3:
-                app.config[key('AUTO_START_REQUEST')] = parsed['options'].get('auto_start_request', True)
+                app.config[key('AUTO_START_REQUEST')] = parsed['options'].get(
+                    'auto_start_request', True)
             else:
-                app.config[key('CONNECT')] = parsed['options'].get('connect', True)
+                app.config[key('CONNECT')] = parsed['options'].get('connect',
+                                                                   True)
 
             # we will use the URI for connecting instead of HOST/PORT
             app.config.pop(key('HOST'), None)
@@ -156,6 +163,7 @@ class PyMongo(object):
             app.config.setdefault(key('READ_PREFERENCE'), None)
             app.config.setdefault(key('SOCKET_TIMEOUT_MS'), None)
             app.config.setdefault(key('CONNECT_TIMEOUT_MS'), None)
+            app.config.setdefault(key('AUTH_MECHANISM'), 'DEFAULT')
 
             if pymongo.version_tuple[0] < 3:
                 app.config.setdefault(key('AUTO_START_REQUEST'), True)
@@ -190,8 +198,8 @@ class PyMongo(object):
             read_preference = getattr(ReadPreference, read_preference)
             if read_preference is None:
                 raise ValueError(
-                    '%s_READ_PREFERENCE: No such read preference name (%r)' % (
-                        config_prefix, read_preference))
+                    '%s_READ_PREFERENCE: No such read preference name (%r)' %
+                    (config_prefix, read_preference))
             app.config[key('READ_PREFERENCE')] = read_preference
         # Else assume read_preference is already a valid constant
         # from pymongo.read_preferences.ReadPreference or None
@@ -205,7 +213,8 @@ class PyMongo(object):
         if pymongo.version_tuple[0] < 3:
             auto_start_request = app.config[key('AUTO_START_REQUEST')]
             if auto_start_request not in (True, False):
-                raise TypeError('%s_AUTO_START_REQUEST must be a bool' % config_prefix)
+                raise TypeError('%s_AUTO_START_REQUEST must be a bool' %
+                                config_prefix)
 
         # document class is not supported by URI, using setdefault in all cases
         document_class = app.config.setdefault(key('DOCUMENT_CLASS'), None)
@@ -250,7 +259,8 @@ class PyMongo(object):
         db = cx[dbname]
 
         if any(auth):
-            db.authenticate(username, password)
+            mechanism = app.config[key('AUTH_MECHANISM')]
+            db.authenticate(username, password, mechanism=mechanism)
 
         app.extensions['pymongo'][config_prefix] = (cx, db)
         app.url_map.converters['ObjectId'] = BSONObjectIdConverter
@@ -263,7 +273,8 @@ class PyMongo(object):
         object.
         """
         if self.config_prefix not in current_app.extensions['pymongo']:
-            raise Exception('not initialized. did you forget to call init_app?')
+            raise Exception(
+                'not initialized. did you forget to call init_app?')
         return current_app.extensions['pymongo'][self.config_prefix][0]
 
     @property
@@ -274,7 +285,8 @@ class PyMongo(object):
         parameter.
         """
         if self.config_prefix not in current_app.extensions['pymongo']:
-            raise Exception('not initialized. did you forget to call init_app?')
+            raise Exception(
+                'not initialized. did you forget to call init_app?')
         return current_app.extensions['pymongo'][self.config_prefix][1]
 
     # view helpers
